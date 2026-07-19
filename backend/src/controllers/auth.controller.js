@@ -1,6 +1,8 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/utils.js";
+import {ENV} from "../lib/env.js";
+import { sendWelcomeEmail } from "../emails/emailHandlers.js";
 
 export const signup = async (req, res) => {
     const { fullName, email, password } = req.body;
@@ -37,6 +39,14 @@ export const signup = async (req, res) => {
                 email: newUser.email,
                 profilePic: newUser.profilePic,
             })
+
+            try{
+                const savedUser = await newUser.save();
+                await sendWelcomeEmail(savedUser.email, savedUser.fullName, ENV.CLIENT_URL);
+            }catch(err){
+                console.error("Error sending welcome email:", err);
+            }
+
         }else{
             res.status(400).json({ message: "Failed to create user" });
         }
